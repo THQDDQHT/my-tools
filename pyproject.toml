@@ -1,7 +1,13 @@
 [project]
 name = "my-tools"
 version = "0.1.0"
-description = "Add your description here"
+description = "A collection of productivity tools"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "python-docx>=1.1.0",
+    "markdownify>=0.14.1",
+]
+
+[project.scripts]
+word2md = "word2md.gui:main"
