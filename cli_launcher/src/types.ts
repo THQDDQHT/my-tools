@@ -1,12 +1,17 @@
-export type CliKind = "claude" | "gemini" | "codex" | "custom";
+export type CliKind = "claude" | "codex";
 
-export type LaunchOptions = {
-  cli: CliKind;
-  workspace: string;
-  settingsPath?: string;
-  bypassPermissions: boolean;
-  asAdmin: boolean;
-};
+export type LaunchOptions =
+  | {
+      cli: "claude";
+      workspace: string;
+      settingsPath?: string;
+      bypassPermissions: boolean;
+      asAdmin: boolean;
+    }
+  | {
+      cli: "codex";
+      workspace: string;
+    };
 
 export type LaunchResult = {
   message: string;

@@ -14,10 +14,15 @@ export function normalizeSettingsPath(
 }
 
 export function launchCli(options: LaunchOptions): Promise<LaunchResult> {
+  const normalizedOptions =
+    options.cli === "claude"
+      ? {
+          ...options,
+          settingsPath: normalizeSettingsPath(options.settingsPath),
+        }
+      : options;
+
   return invoke<LaunchResult>("launch_cli", {
-    options: {
-      ...options,
-      settingsPath: normalizeSettingsPath(options.settingsPath),
-    },
+    options: normalizedOptions,
   });
 }

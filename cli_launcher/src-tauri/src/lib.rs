@@ -29,19 +29,26 @@ fn selected_settings_path(value: Option<String>) -> Option<String> {
     })
 }
 
-fn build_claude_args(settings_path: Option<&Path>, bypass_permissions: bool) -> Vec<String> {
-    let mut args = vec!["claude".to_string()];
-    if let Some(settings) = settings_path {
-        args.push("--settings".to_string());
-        args.push(settings.to_string_lossy().to_string());
-    }
-    if bypass_permissions {
-        args.push("--dangerously-skip-permissions".to_string());
+fn build_cli_args(cli: &str, settings_path: Option<&Path>, bypass_permissions: bool) -> Vec<String> {
+    let mut args = vec![cli.to_string()];
+    if cli == "claude" {
+        if let Some(settings) = settings_path {
+            args.push("--settings".to_string());
+            args.push(settings.to_string_lossy().to_string());
+        }
+        if bypass_permissions {
+            args.push("--dangerously-skip-permissions".to_string());
+        }
     }
     args
 }
 
-fn build_wt_command(workspace: &Path, settings_path: Option<&Path>, bypass_permissions: bool) -> Vec<String> {
+fn build_wt_command(
+    cli: &str,
+    workspace: &Path,
+    settings_path: Option<&Path>,
+    bypass_permissions: bool,
+) -> Vec<String> {
     let mut args = vec![
         "wt".to_string(),
         "-w".to_string(),
@@ -50,7 +57,7 @@ fn build_wt_command(workspace: &Path, settings_path: Option<&Path>, bypass_permi
         "-d".to_string(),
         workspace.to_string_lossy().to_string(),
     ];
-    args.extend(build_claude_args(settings_path, bypass_permissions));
+    args.extend(build_cli_args(cli, settings_path, bypass_permissions));
     args
 }
 
@@ -125,20 +132,27 @@ fn spawn_command(command_parts: Vec<String>) -> Result<(), String> {
 
 #[tauri::command]
 fn launch_cli(options: LaunchOptions) -> Result<LaunchResult, String> {
-    if options.cli != "claude" {
-        return Err("当前只支持 Claude Code。".to_string());
+    if options.cli != "claude" && options.cli != "codex" {
+        return Err("当前只支持 Claude Code 和 Codex。".to_string());
     }
 
     let settings = selected_settings_path(options.settings_path);
     let (workspace, settings_file) = validate_launch_inputs(&options.workspace, settings.as_deref())?;
-    let command = if options.as_admin {
+    let command = if options.as_admin && options.cli == "claude" {
         build_admin_wt_command(&workspace, settings_file.as_deref(), options.bypass_permissions)
     } else {
-        build_wt_command(&workspace, settings_file.as_deref(), options.bypass_permissions)
+        build_wt_command(
+            &options.cli,
+            &workspace,
+            settings_file.as_deref(),
+            options.bypass_permissions,
+        )
     };
     spawn_command(command)?;
 
-    let message = if options.as_admin {
+    let message = if options.cli == "codex" {
+        "已启动 Codex。"
+    } else if options.as_admin {
         "已请求以管理员权限启动 Claude Code。"
     } else {
         "已启动 Claude Code。"
@@ -177,10 +191,10 @@ mod tests {
     }
 
     #[test]
-    fn build_claude_args_includes_settings_and_bypass() {
+    fn build_cli_args_includes_claude_settings_and_bypass() {
         let settings = PathBuf::from("C:/Users/DELL/.claude/settings.json");
         assert_eq!(
-            build_claude_args(Some(&settings), true),
+            build_cli_args("claude", Some(&settings), true),
             vec!["claude", "--settings", "C:/Users/DELL/.claude/settings.json", "--dangerously-skip-permissions"]
         );
     }
@@ -189,8 +203,17 @@ mod tests {
     fn build_wt_command_reuses_recent_window_and_new_tab() {
         let workspace = PathBuf::from("C:/Users/DELL/My Project");
         assert_eq!(
-            build_wt_command(&workspace, None, false),
+            build_wt_command("claude", &workspace, None, false),
             vec!["wt", "-w", "0", "nt", "-d", "C:/Users/DELL/My Project", "claude"]
+        );
+    }
+
+    #[test]
+    fn build_wt_command_launches_codex_without_claude_options() {
+        let workspace = PathBuf::from("C:/Users/DELL/My Project");
+        assert_eq!(
+            build_wt_command("codex", &workspace, None, false),
+            vec!["wt", "-w", "0", "nt", "-d", "C:/Users/DELL/My Project", "codex"]
         );
     }
 
