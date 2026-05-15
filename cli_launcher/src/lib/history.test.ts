@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { addRecentPath, emptyHistory, loadHistory, saveHistory } from "./history";
+import {
+  addRecentPath,
+  emptyHistory,
+  loadHistory,
+  saveHistory,
+} from "./history";
 
 describe("history", () => {
   it("adds recent paths to the front and removes duplicates", () => {
@@ -23,7 +28,10 @@ describe("history", () => {
   });
 
   it("saves and loads history", () => {
-    const history = { workspaces: ["C:/workspace"], settingsFiles: ["C:/settings.json"] };
+    const history = {
+      workspaces: ["C:/workspace"],
+      settingsFiles: ["C:/settings.json"],
+    };
     saveHistory(history);
     expect(loadHistory()).toEqual(history);
   });

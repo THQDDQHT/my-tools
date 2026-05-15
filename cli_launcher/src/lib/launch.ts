@@ -3,7 +3,9 @@ import type { LaunchOptions, LaunchResult } from "../types";
 
 export const NO_SETTINGS_LABEL = "不使用 settings";
 
-export function normalizeSettingsPath(value: string | undefined): string | undefined {
+export function normalizeSettingsPath(
+  value: string | undefined,
+): string | undefined {
   const text = value?.trim();
   if (!text || text === NO_SETTINGS_LABEL) {
     return undefined;

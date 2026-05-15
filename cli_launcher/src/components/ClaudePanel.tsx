@@ -16,7 +16,11 @@ export function ClaudePanel() {
   const canLaunch = workspace.trim().length > 0;
 
   async function chooseWorkspace() {
-    const selected = await open({ directory: true, multiple: false, title: "Select workspace" });
+    const selected = await open({
+      directory: true,
+      multiple: false,
+      title: "Select workspace",
+    });
     if (typeof selected === "string") {
       setWorkspace(selected);
     }
@@ -47,7 +51,10 @@ export function ClaudePanel() {
       });
       const nextHistory = {
         workspaces: addRecentPath(history.workspaces, workspace),
-        settingsFiles: settingsPath === NO_SETTINGS_LABEL ? history.settingsFiles : addRecentPath(history.settingsFiles, settingsPath),
+        settingsFiles:
+          settingsPath === NO_SETTINGS_LABEL
+            ? history.settingsFiles
+            : addRecentPath(history.settingsFiles, settingsPath),
       };
       setHistory(nextHistory);
       saveHistory(nextHistory);
@@ -59,20 +66,21 @@ export function ClaudePanel() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-      <section className="rounded-3xl border border-white/10 bg-white/[0.07] p-5 shadow-glow backdrop-blur-xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-indigo-200/70">Claude Code</p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">Launch a Claude terminal tab</h2>
-          </div>
-          <div className="rounded-2xl bg-indigo-500/20 p-3 text-indigo-200">
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-600">
             <Terminal className="h-6 w-6" />
           </div>
+          <h2 className="text-xl font-semibold text-slate-900">Claude Code</h2>
         </div>
 
-        <div aria-label="Claude launch actions" role="group" className="mt-5 flex flex-wrap gap-3">
+        <div
+          aria-label="Claude launch actions"
+          role="group"
+          className="mt-6 flex flex-wrap gap-3"
+        >
           <button
-            className="inline-flex min-h-11 items-center gap-2 rounded-2xl bg-indigo-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-950/50 transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex min-h-11 items-center gap-2 rounded-2xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
             disabled={!canLaunch}
             onClick={() => launch(false)}
             type="button"
@@ -80,77 +88,111 @@ export function ClaudePanel() {
             <Zap className="h-4 w-4" /> Launch
           </button>
           <button
-            className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-amber-300/30 bg-amber-400/10 px-5 py-2.5 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/15 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
             disabled={!canLaunch}
             onClick={() => launch(true)}
             type="button"
           >
-            <Shield className="h-4 w-4" /> Launch as Administrator
+            <Shield className="h-4 w-4" /> Admin Launch
           </button>
         </div>
 
-        <div className="mt-5 space-y-4">
+        <div className="mt-8 space-y-5">
           <label className="block">
-            <span className="text-sm font-medium text-slate-200">Workspace</span>
+            <span className="text-sm font-medium text-slate-700">
+              Workspace
+            </span>
             <div className="mt-2 flex gap-3">
               <input
                 aria-label="Workspace"
-                className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none ring-indigo-400/0 transition focus:border-indigo-300/60 focus:ring-4 focus:ring-indigo-400/10"
+                className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
                 value={workspace}
                 onChange={(event) => setWorkspace(event.target.value)}
                 placeholder="Select a working directory"
               />
-              <button className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium text-white transition hover:bg-white/15" onClick={chooseWorkspace} type="button">
+              <button
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+                onClick={chooseWorkspace}
+                type="button"
+              >
                 <FolderOpen className="h-4 w-4" /> Browse
               </button>
             </div>
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-slate-200">Settings file</span>
+            <span className="text-sm font-medium text-slate-700">
+              Settings file
+            </span>
             <div className="mt-2 flex gap-3">
               <input
                 aria-label="Settings file"
-                className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none ring-indigo-400/0 transition focus:border-indigo-300/60 focus:ring-4 focus:ring-indigo-400/10"
+                className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
                 value={settingsPath}
                 onChange={(event) => setSettingsPath(event.target.value)}
               />
-              <button className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium text-white transition hover:bg-white/15" onClick={chooseSettings} type="button">
+              <button
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+                onClick={chooseSettings}
+                type="button"
+              >
                 <FolderOpen className="h-4 w-4" /> Browse
               </button>
             </div>
           </label>
 
-          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-4">
+          <div className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4">
             <div>
-              <label className="text-sm font-medium text-white" htmlFor="bypass-permissions">Bypass permissions mode</label>
-              <p className="mt-1 text-xs text-slate-400">Equivalent to Claude Code bypassPermissions mode.</p>
+              <label
+                className="text-sm font-medium text-slate-900"
+                htmlFor="bypass-permissions"
+              >
+                Bypass permissions mode
+              </label>
             </div>
             <Switch.Root
               aria-label="Bypass permissions mode"
               checked={bypassPermissions}
-              className="relative h-7 w-12 rounded-full bg-slate-700 outline-none data-[state=checked]:bg-indigo-500"
+              className="relative h-7 w-12 rounded-full bg-slate-300 outline-none data-[state=checked]:bg-indigo-600"
               id="bypass-permissions"
               onCheckedChange={setBypassPermissions}
             >
-              <Switch.Thumb className="block h-6 w-6 translate-x-0.5 rounded-full bg-white transition-transform data-[state=checked]:translate-x-5" />
+              <Switch.Thumb className="block h-6 w-6 translate-x-0.5 rounded-full bg-white shadow-sm transition-transform data-[state=checked]:translate-x-5" />
             </Switch.Root>
           </div>
 
-          <p className="text-xs leading-5 text-slate-400">Administrator launches use a separate elevated Windows Terminal instance when Windows requires it.</p>
-          {status ? <p className="rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">{status}</p> : null}
-          {error ? <p className="rounded-2xl border border-rose-300/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">{error}</p> : null}
+          {status ? (
+            <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+              {status}
+            </p>
+          ) : null}
+          {error ? (
+            <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+              {error}
+            </p>
+          ) : null}
         </div>
       </section>
 
-      <aside className="rounded-3xl border border-white/10 bg-white/[0.06] p-6 backdrop-blur-xl">
-        <h3 className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-300">Recent workspaces</h3>
+      <aside className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
+          Recent workspaces
+        </h3>
         <div className="mt-4 space-y-2">
-          {history.workspaces.length ? history.workspaces.map((item) => (
-            <button key={item} className="block w-full truncate rounded-xl bg-white/5 px-3 py-2 text-left text-xs text-slate-200 transition hover:bg-white/10" onClick={() => setWorkspace(item)} type="button">
-              {item}
-            </button>
-          )) : <p className="text-sm text-slate-500">No recent workspaces yet.</p>}
+          {history.workspaces.length ? (
+            history.workspaces.map((item) => (
+              <button
+                key={item}
+                className="block w-full truncate rounded-xl px-3 py-2.5 text-left text-sm text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                onClick={() => setWorkspace(item)}
+                type="button"
+              >
+                {item}
+              </button>
+            ))
+          ) : (
+            <p className="text-sm text-slate-500">No recent workspaces yet.</p>
+          )}
         </div>
       </aside>
     </div>

@@ -12,7 +12,10 @@ export function addRecentPath(values: string[], value: string): string[] {
   if (!text) {
     return values.slice(0, MAX_HISTORY);
   }
-  return [text, ...values.filter((item) => item !== text)].slice(0, MAX_HISTORY);
+  return [text, ...values.filter((item) => item !== text)].slice(
+    0,
+    MAX_HISTORY,
+  );
 }
 
 function cleanValues(value: unknown): string[] {
@@ -41,7 +44,10 @@ export function loadHistory(): LauncherHistory {
     return emptyHistory();
   }
   try {
-    const parsed = JSON.parse(raw) as { workspaces?: unknown; settingsFiles?: unknown };
+    const parsed = JSON.parse(raw) as {
+      workspaces?: unknown;
+      settingsFiles?: unknown;
+    };
     return {
       workspaces: cleanValues(parsed.workspaces),
       settingsFiles: cleanValues(parsed.settingsFiles),
