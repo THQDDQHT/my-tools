@@ -1,0 +1,55 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Node / frontend
+node_modules/
+dist/
+*.tsbuildinfo
+*.log
+.npmrc
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/gen/
+release/
+
+# Local environment
+.env
+.env.local
+
+# Editor / OS
+.DS_Store
+.idea
+.vscode
+
+# Local agent/tool state
+CLAUDE.md
+GEMINI.md
+/.claude
+/.codex
+/.gemini
+/.cc-switch
+.worktrees/
+.spec-workflow/
+.history
+CODEBUDDY.md
+
+# Reports / generated scratch files
+vitest-report.json
+nul
+mainWindow.js
+
+# Flatpak build artifacts
+flatpak/cc-switch.deb
+flatpak-build/
+flatpak-repo/
+copilot-api
+.github
