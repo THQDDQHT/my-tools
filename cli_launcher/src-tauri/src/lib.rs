@@ -8,7 +8,11 @@ struct LaunchOptions {
     cli: String,
     workspace: String,
     settings_path: Option<String>,
+    /// Codex 启动时前端不传此字段，缺失时默认 false
+    #[serde(default)]
     bypass_permissions: bool,
+    /// Codex 启动时前端不传此字段，缺失时默认 false
+    #[serde(default)]
     as_admin: bool,
 }
 
