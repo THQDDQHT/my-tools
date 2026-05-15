@@ -29,7 +29,11 @@ fn selected_settings_path(value: Option<String>) -> Option<String> {
     })
 }
 
-fn build_cli_args(cli: &str, settings_path: Option<&Path>, bypass_permissions: bool) -> Vec<String> {
+fn build_cli_args(
+    cli: &str,
+    settings_path: Option<&Path>,
+    bypass_permissions: bool,
+) -> Vec<String> {
     let mut args = vec![cli.to_string()];
     if cli == "claude" {
         if let Some(settings) = settings_path {
@@ -65,37 +69,50 @@ fn quote_powershell_argument(value: &str) -> String {
     format!("'{}'", value.replace('\'', "''"))
 }
 
-fn build_admin_wt_command(workspace: &Path, settings_path: Option<&Path>, bypass_permissions: bool) -> Vec<String> {
-    let mut argument_list = vec![
+/// 构建以管理员权限启动 Windows Terminal 的命令。
+/// 将整条 Start-Process 命令作为单个 -Command 字符串传递给 powershell，
+/// 并使用逗号分隔的 PowerShell 数组语法传递 -ArgumentList，
+/// 避免 PowerShell 将 wt 的 -w 等参数误解析为 Start-Process 的参数。
+fn build_admin_wt_command(
+    workspace: &Path,
+    settings_path: Option<&Path>,
+    bypass_permissions: bool,
+) -> Vec<String> {
+    let mut wt_args = vec![
         "-w".to_string(),
         "0".to_string(),
         "nt".to_string(),
         "-d".to_string(),
-        quote_powershell_argument(&workspace.to_string_lossy()),
+        workspace.to_string_lossy().to_string(),
         "claude".to_string(),
     ];
     if let Some(settings) = settings_path {
-        argument_list.push("--settings".to_string());
-        argument_list.push(quote_powershell_argument(&settings.to_string_lossy()));
+        wt_args.push("--settings".to_string());
+        wt_args.push(settings.to_string_lossy().to_string());
     }
     if bypass_permissions {
-        argument_list.push("--dangerously-skip-permissions".to_string());
+        wt_args.push("--dangerously-skip-permissions".to_string());
     }
+
+    // 每个参数单独用单引号包裹，再用逗号连接，形成 PowerShell 数组字面量
+    let ps_array = wt_args
+        .iter()
+        .map(|arg| quote_powershell_argument(arg))
+        .collect::<Vec<_>>()
+        .join(",");
 
     vec![
         "powershell".to_string(),
         "-NoProfile".to_string(),
         "-Command".to_string(),
-        "Start-Process".to_string(),
-        "wt".to_string(),
-        "-Verb".to_string(),
-        "RunAs".to_string(),
-        "-ArgumentList".to_string(),
-        argument_list.join(" "),
+        format!("Start-Process wt -Verb RunAs -ArgumentList {}", ps_array),
     ]
 }
 
-fn validate_launch_inputs(workspace: &str, settings_path: Option<&str>) -> Result<(PathBuf, Option<PathBuf>), String> {
+fn validate_launch_inputs(
+    workspace: &str,
+    settings_path: Option<&str>,
+) -> Result<(PathBuf, Option<PathBuf>), String> {
     if workspace.trim().is_empty() {
         return Err("请选择工作文件夹。".to_string());
     }
@@ -137,9 +154,14 @@ fn launch_cli(options: LaunchOptions) -> Result<LaunchResult, String> {
     }
 
     let settings = selected_settings_path(options.settings_path);
-    let (workspace, settings_file) = validate_launch_inputs(&options.workspace, settings.as_deref())?;
+    let (workspace, settings_file) =
+        validate_launch_inputs(&options.workspace, settings.as_deref())?;
     let command = if options.as_admin && options.cli == "claude" {
-        build_admin_wt_command(&workspace, settings_file.as_deref(), options.bypass_permissions)
+        build_admin_wt_command(
+            &workspace,
+            settings_file.as_deref(),
+            options.bypass_permissions,
+        )
     } else {
         build_wt_command(
             &options.cli,
@@ -157,7 +179,9 @@ fn launch_cli(options: LaunchOptions) -> Result<LaunchResult, String> {
     } else {
         "已启动 Claude Code。"
     };
-    Ok(LaunchResult { message: message.to_string() })
+    Ok(LaunchResult {
+        message: message.to_string(),
+    })
 }
 
 pub fn run() {
@@ -176,7 +200,10 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     fn temp_dir(name: &str) -> PathBuf {
-        let unique = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
         let path = std::env::temp_dir().join(format!("cli-launcher-{name}-{unique}"));
         fs::create_dir_all(&path).unwrap();
         path
@@ -186,8 +213,14 @@ mod tests {
     fn selected_settings_path_treats_empty_and_label_as_none() {
         assert_eq!(selected_settings_path(None), None);
         assert_eq!(selected_settings_path(Some("".to_string())), None);
-        assert_eq!(selected_settings_path(Some(" 不使用 settings ".to_string())), None);
-        assert_eq!(selected_settings_path(Some("C:/settings.json".to_string())), Some("C:/settings.json".to_string()));
+        assert_eq!(
+            selected_settings_path(Some(" 不使用 settings ".to_string())),
+            None
+        );
+        assert_eq!(
+            selected_settings_path(Some("C:/settings.json".to_string())),
+            Some("C:/settings.json".to_string())
+        );
     }
 
     #[test]
@@ -195,7 +228,12 @@ mod tests {
         let settings = PathBuf::from("C:/Users/DELL/.claude/settings.json");
         assert_eq!(
             build_cli_args("claude", Some(&settings), true),
-            vec!["claude", "--settings", "C:/Users/DELL/.claude/settings.json", "--dangerously-skip-permissions"]
+            vec![
+                "claude",
+                "--settings",
+                "C:/Users/DELL/.claude/settings.json",
+                "--dangerously-skip-permissions"
+            ]
         );
     }
 
@@ -204,7 +242,15 @@ mod tests {
         let workspace = PathBuf::from("C:/Users/DELL/My Project");
         assert_eq!(
             build_wt_command("claude", &workspace, None, false),
-            vec!["wt", "-w", "0", "nt", "-d", "C:/Users/DELL/My Project", "claude"]
+            vec![
+                "wt",
+                "-w",
+                "0",
+                "nt",
+                "-d",
+                "C:/Users/DELL/My Project",
+                "claude"
+            ]
         );
     }
 
@@ -213,7 +259,15 @@ mod tests {
         let workspace = PathBuf::from("C:/Users/DELL/My Project");
         assert_eq!(
             build_wt_command("codex", &workspace, None, false),
-            vec!["wt", "-w", "0", "nt", "-d", "C:/Users/DELL/My Project", "codex"]
+            vec![
+                "wt",
+                "-w",
+                "0",
+                "nt",
+                "-d",
+                "C:/Users/DELL/My Project",
+                "codex"
+            ]
         );
     }
 
@@ -227,12 +281,7 @@ mod tests {
                 "powershell",
                 "-NoProfile",
                 "-Command",
-                "Start-Process",
-                "wt",
-                "-Verb",
-                "RunAs",
-                "-ArgumentList",
-                "-w 0 nt -d 'C:/Users/DELL/My Project' claude --settings 'C:/Users/DELL/.claude/settings.json' --dangerously-skip-permissions"
+                "Start-Process wt -Verb RunAs -ArgumentList '-w','0','nt','-d','C:/Users/DELL/My Project','claude','--settings','C:/Users/DELL/.claude/settings.json','--dangerously-skip-permissions'"
             ]
         );
     }
@@ -243,7 +292,11 @@ mod tests {
         let settings = workspace.join("settings.json");
         fs::write(&settings, "{}").unwrap();
 
-        let result = validate_launch_inputs(workspace.to_str().unwrap(), Some(settings.to_str().unwrap())).unwrap();
+        let result = validate_launch_inputs(
+            workspace.to_str().unwrap(),
+            Some(settings.to_str().unwrap()),
+        )
+        .unwrap();
 
         assert_eq!(result.0, workspace);
         assert_eq!(result.1, Some(settings));
@@ -260,7 +313,11 @@ mod tests {
     fn validate_launch_inputs_rejects_missing_settings_file() {
         let workspace = temp_dir("missing-settings");
         let settings = workspace.join("missing.json");
-        let error = validate_launch_inputs(workspace.to_str().unwrap(), Some(settings.to_str().unwrap())).unwrap_err();
+        let error = validate_launch_inputs(
+            workspace.to_str().unwrap(),
+            Some(settings.to_str().unwrap()),
+        )
+        .unwrap_err();
         assert!(error.contains("settings 文件不存在"));
     }
 }
